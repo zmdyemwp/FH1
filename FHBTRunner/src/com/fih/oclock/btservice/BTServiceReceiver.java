@@ -59,7 +59,8 @@ public class BTServiceReceiver extends BroadcastReceiver {
 				if(command.contains(ConnectionManagerActions.INIT_SERVER)) {
 					if(null == mBTCommunicator) {
 						mBTCommunicator = new Communicator(context);
-					}	mBTCommunicator.start();
+						mBTCommunicator.start();
+					}
 				} else if(command.contains(ConnectionManagerActions.CONNECT_TO)) {
 					String address = intent.getStringExtra(ConnectionManagerActions.DEVICE_ADDRESS);
 

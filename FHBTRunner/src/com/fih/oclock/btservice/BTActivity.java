@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
 import android.view.View;
 import android.widget.TextView;
 
@@ -63,8 +64,15 @@ public class BTActivity extends Activity {
     	super.onStop();
     	this.unregisterReceiver(receiver);
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.bt, menu);
+        return true;
+    }
     
-    
+
     public void UpdateConnectionState(int state) {
     	TextView tv1 = (TextView)findViewById(R.id.textView1);
     	String s1;

@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <string name="version">v0.0.2</string>
+    
     <string name="app_name">FIH.OCLOCK</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>

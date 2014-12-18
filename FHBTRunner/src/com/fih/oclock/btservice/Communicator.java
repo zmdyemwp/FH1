@@ -175,11 +175,6 @@ public class Communicator {
 
         // Start the thread to manage the connection and perform transmissions
         mConnectedThread = new ConnectedThread(socket, socketType);
-        if(socket.isConnected()) {
-    		Log.d(TAG, "IS Connected");
-    	} else {
-    		Log.d(TAG, "is NOT Connected");
-    	}
         mConnectedThread.start();
 
         // Send the name of the connected device back to the UI Activity
@@ -266,7 +261,6 @@ public class Communicator {
         */
         // Start the service over to restart listening mode
         //BluetoothChatService.this.start();
-		//	TODO: broadcast to notify detach
     }
 
     private class AcceptThread extends Thread {
@@ -280,7 +274,6 @@ public class Communicator {
 
             // Create a new listening server socket
             try {
-            	//	TODO:##########################################################################
             	if( ! rollback) {
             		tmp = mAdapter.listenUsingRfcommWithServiceRecord(NAME_SECURE, MY_UUID_SECURE);
             	} else {
@@ -360,7 +353,6 @@ public class Communicator {
             // Get a BluetoothSocket for a connection with the
             // given BluetoothDevice
             try {
-            	//	TODO:##########################################################################
             	if( ! rollback) {
             		tmp = device.createRfcommSocketToServiceRecord(MY_UUID_SECURE);
             	} else {
@@ -412,11 +404,6 @@ public class Communicator {
                 mConnectThread = null;
             }
             // Start the connected thread
-            if(mmSocket.isConnected()) {
-        		Log.d(TAG, "## IS Connected");
-        	} else {
-        		Log.d(TAG, "## is NOT Connected");
-        	}
             connected(mmSocket, mmDevice, mSocketType);
         }
 
@@ -457,11 +444,23 @@ public class Communicator {
             mmOutStream = tmpOut;
         }
 
+        void broadcastConnectionStatus(boolean bConnected) {
+        	Intent i = new Intent();
+        	if(bConnected) {
+        		i.setAction(ConnectionManagerActions.NOTIFICATION_ATTACH);
+        	} else {
+        		i.setAction(ConnectionManagerActions.NOTIFICATION_DETACH);
+        	}
+        	Communicator.this.mContext.sendBroadcast(i);
+        }
+        
         public void run() {
             Log.i(TAG, "BEGIN mConnectedThread");
             byte[] buffer = new byte[1024];
             int bytes;
             // Keep listening to the InputStream while connected
+            //		TODO: broadcast connected
+            broadcastConnectionStatus(true);
             while (true) {
                 try {
                     // Read from the InputStream
@@ -469,12 +468,6 @@ public class Communicator {
                     bytes = mmInStream.read(buffer);
                     mMsgHandler.parse(buffer,bytes);
                     Log.d(TAG, "......");
-                    //	TODO: By pass data here
-                    // Send the obtained bytes to the UI Activity
-                    /*
-                    mHandler.obtainMessage(BluetoothChat.MESSAGE_READ, bytes, -1, buffer)
-                            .sendToTarget();
-                    */
                 } catch (IOException e) {
                     Log.e(TAG, "DISCONNECTED", e);
                     connectionLost();
@@ -483,6 +476,8 @@ public class Communicator {
                     break;
                 }
             }
+            //		TODO: broadcast disconnected
+            broadcastConnectionStatus(false);
         }
 
         /**

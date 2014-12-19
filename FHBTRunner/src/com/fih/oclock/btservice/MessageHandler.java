@@ -17,34 +17,80 @@ public class MessageHandler {
         mContext = context;
     }
 
+    boolean checkIfComplete() {
+    	if(total_len > 4 &&
+    			(byte)0xdd == metaBuffer[total_len - 1] &&
+    			(byte)0xcc == metaBuffer[total_len - 2] &&
+    			(byte)0xbb == metaBuffer[total_len - 3] &&
+    			(byte)0xaa == metaBuffer[total_len - 4]) {
+    		Log.d(TAG, "Complete!");
+    		return true;
+    	} else {
+    		Log.d(TAG, String.format("{ %02x, %02x, %02x, %02x }", 
+    				metaBuffer[total_len - 4], 
+    				metaBuffer[total_len - 3], 
+    				metaBuffer[total_len - 2], 
+    				metaBuffer[total_len - 1]));
+    	}
+    	Log.d(TAG, "NOT Complete!......."+total_len);
+    	return false;
+    }
+    
     public void parse(byte[] buf, int len)
     {
     	Log.d(TAG, "MessageHandler::parse()::"+len);
-    	/*for(int i = 0; i < len; i++) {
-    		Log.d(TAG, String.format("%02x", buf[i]));
-    	}*/
-    	int index = 0;
-    	for(; index < len; index++) {
-    		if((byte)0xff == buf[index]) {
-    			break;
-    		}
+    	
+    	if(metaBufferSize <= (total_len + len)) {
+    		//	TODO: too many data.........
+    		Log.d(TAG, "TOO MANY DATA!");
+    		metaBuffer[total_len/2 + 0] = metaBuffer[total_len - 4];
+    		metaBuffer[total_len/2 + 1] = metaBuffer[total_len - 3];
+    		metaBuffer[total_len/2 + 2] = metaBuffer[total_len - 2];
+    		metaBuffer[total_len/2 + 3] = metaBuffer[total_len - 1];
+    		Log.d(TAG, "TooMany::"+String.format("Total: %d -> %d", total_len, total_len/2 + 4));
+    		total_len = total_len/2 + 4; 
     	}
-    	if(0 < index) {
-    		Log.d(TAG, "INDEX/LENG:"+index+"/"+len);
-	    	byte[] action = new byte[index];
-	    	System.arraycopy(buf, 0, action, 0, index);
-	    	int data_len = len - 1 - index;
-	    	byte[] data = new byte[data_len];
-	    	System.arraycopy(buf, index + 1, data, 0, data_len);
+    	
+    	if(metaBufferSize > (total_len + len)) {
+    		System.arraycopy(buf, 0, metaBuffer, total_len, len);
+    		total_len += len;
+    		bComplete = checkIfComplete();
+    	}
+    	
+    	if(bComplete) {
+	    	int index = 0;
+	    	for(; index < total_len; index++) {
+	    		if((byte)0xff == metaBuffer[index]) {
+	    			break;
+	    		}
+	    	}
 	    	
-	    	Intent i = new Intent();
-	    	i.setAction(new String(action));
-	    	i.putExtra(ConnectionManagerActions.DATA_FIELD, data);
-	    	mContext.sendBroadcast(i);
+	    	if(index == total_len) {
+	    		//	TODO: 0xff NOT found
+	    		Log.d(TAG, "ACTION NOT FOUND");
+	    		total_len = 0;
+	    		bComplete = false;
+	    	} else if(0 < index) {
+	    		Log.d(TAG, "INDEX/LENG:"+index+"/"+total_len);
+		    	byte[] action = new byte[index];
+		    	System.arraycopy(metaBuffer, 0, action, 0, index);
+		    	int data_len = total_len - 4 - 1 - index;
+		    	byte[] data = new byte[data_len];
+		    	System.arraycopy(metaBuffer, index + 1, data, 0, data_len);
+		    	
+		    	Intent i = new Intent();
+		    	i.setAction(new String(action));
+		    	i.putExtra(ConnectionManagerActions.DATA_FIELD, data);
+		    	mContext.sendBroadcast(i);
+	    	}
+	    	total_len = 0;
     	}
     }
 
-
+    final int metaBufferSize = 409600;
+    byte[] metaBuffer = new byte[metaBufferSize];
+    int total_len = 0;
+    boolean bComplete = false;
 
 
 }

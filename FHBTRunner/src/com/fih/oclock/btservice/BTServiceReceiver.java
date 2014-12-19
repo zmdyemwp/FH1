@@ -97,16 +97,23 @@ public class BTServiceReceiver extends BroadcastReceiver {
 			}
 		 } else if(action.contains(ConnectionManagerActions.ACTION_SEND_DATA)) {
 			try{
+				//	TODO: Send Data
 				String NAME = intent.getStringExtra(ConnectionManagerActions.CLIENT_FIELD);
 				byte[] name = NAME.getBytes();
 				byte[] data = intent.getByteArrayExtra(ConnectionManagerActions.DATA_FIELD);
-				byte[] data2send = new byte[1 + name.length + data.length];
+				byte[] data2send = new byte[1 + name.length + data.length + 4];
 				int offset = 0;
 				System.arraycopy(name, 0, data2send, offset, name.length);
 				offset += name.length;
-				data2send[name.length] = (byte) 0xff;
+				data2send[offset] = (byte) 0xff;
 				offset ++;
 				System.arraycopy(data, 0, data2send, offset, data.length);
+				offset += data.length;
+				data2send[offset] = (byte)0xaa;
+				data2send[offset + 1] = (byte)0xbb;
+				data2send[offset + 2] = (byte)0xcc;
+				data2send[offset + 3] = (byte)0xdd;
+				
 				if(null != mBTCommunicator) {
 					mBTCommunicator.write(data2send);							//	Send data
 				}

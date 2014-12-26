@@ -2,6 +2,7 @@ package com.fih.oclock.btservice;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
@@ -9,8 +10,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.TextView;
-
-import com.fih.oclock.connectionmanageraction.ConnectionManagerActions;
 
 
 public class BTActivity extends Activity {
@@ -138,7 +137,11 @@ public class BTActivity extends Activity {
 			String address = data.getStringExtra("address");
 			Intent i = new Intent();
 			i.setAction(ConnectionManagerActions.CONTROL_ACTION);
-			i.putExtra(ConnectionManagerActions.COMMAND_FIELD, ConnectionManagerActions.CONNECT_TO);
+			if(BluetoothDevice.BOND_BONDED == BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address).getBondState()) {
+				i.putExtra(ConnectionManagerActions.COMMAND_FIELD, ConnectionManagerActions.CONNECT_TO);
+			} else {
+				i.putExtra(ConnectionManagerActions.COMMAND_FIELD, ConnectionManagerActions.BOND_CONNECT_TO);
+			}
 			i.putExtra(ConnectionManagerActions.DEVICE_ADDRESS, address);
 			sendBroadcast(i);
 		} else if(REQUEST_ENABLE_BT == requestCode) {

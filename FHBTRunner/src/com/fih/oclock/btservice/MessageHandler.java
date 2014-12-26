@@ -1,7 +1,5 @@
 package com.fih.oclock.btservice;
 
-import com.fih.oclock.connectionmanageraction.ConnectionManagerActions;
-
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
@@ -79,9 +77,11 @@ public class MessageHandler {
 		    	System.arraycopy(metaBuffer, index + 1, data, 0, data_len);
 		    	
 		    	Intent i = new Intent();
-		    	i.setAction(new String(action));
+		    	String szAction = new String(action);
+		    	i.setAction(szAction);
 		    	i.putExtra(ConnectionManagerActions.DATA_FIELD, data);
 		    	mContext.sendBroadcast(i);
+		    	Log.d(TAG, "parse()::sendBroadcast()::"+szAction+"("+szAction.length()+")");
 	    	}
 	    	total_len = 0;
     	}

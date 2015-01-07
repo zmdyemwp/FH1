@@ -1,7 +1,6 @@
 package com.fih.oclock.btservice;
 
 import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
 
 /**
@@ -16,15 +15,17 @@ public class MessageHandler {
     }
 
     boolean checkIfComplete() {
-    	if(total_len > 4 &&
-    			(byte)0xdd == metaBuffer[total_len - 1] &&
-    			(byte)0xcc == metaBuffer[total_len - 2] &&
-    			(byte)0xbb == metaBuffer[total_len - 3] &&
-    			(byte)0xaa == metaBuffer[total_len - 4]) {
+    	if(total_len > 5 &&
+    			(byte)0x78 == metaBuffer[total_len - 1] &&		//	ObjectStreamConstants.TC_ENDBLOCKDATA
+    			(byte)0xdd == metaBuffer[total_len - 2] &&
+    			(byte)0xcc == metaBuffer[total_len - 3] &&
+    			(byte)0xbb == metaBuffer[total_len - 4] &&
+    			(byte)0xaa == metaBuffer[total_len - 5]) {
     		Log.d(TAG, "Complete!");
     		return true;
     	} else {
-    		Log.d(TAG, String.format("{ %02x, %02x, %02x, %02x }", 
+    		Log.d(TAG, String.format("{ %02x, %02x, %02x, %02x, %02x }", 
+    				metaBuffer[total_len - 5],
     				metaBuffer[total_len - 4], 
     				metaBuffer[total_len - 3], 
     				metaBuffer[total_len - 2], 
@@ -34,57 +35,43 @@ public class MessageHandler {
     	return false;
     }
     
-    public void parse(byte[] buf, int len)
+    public byte[] parse(byte[] buf, int len)
     {
+    	byte[] result = null;
     	Log.d(TAG, "MessageHandler::parse()::"+len);
-    	
+
     	if(metaBufferSize <= (total_len + len)) {
     		//	TODO: too many data.........
     		Log.d(TAG, "TOO MANY DATA!");
-    		metaBuffer[total_len/2 + 0] = metaBuffer[total_len - 4];
-    		metaBuffer[total_len/2 + 1] = metaBuffer[total_len - 3];
-    		metaBuffer[total_len/2 + 2] = metaBuffer[total_len - 2];
-    		metaBuffer[total_len/2 + 3] = metaBuffer[total_len - 1];
-    		Log.d(TAG, "TooMany::"+String.format("Total: %d -> %d", total_len, total_len/2 + 4));
-    		total_len = total_len/2 + 4; 
+    		metaBuffer[total_len/2 + 0] = metaBuffer[total_len - 5];
+    		metaBuffer[total_len/2 + 1] = metaBuffer[total_len - 4];
+    		metaBuffer[total_len/2 + 2] = metaBuffer[total_len - 3];
+    		metaBuffer[total_len/2 + 3] = metaBuffer[total_len - 2];
+    		metaBuffer[total_len/2 + 4] = metaBuffer[total_len - 1];
+    		Log.d(TAG, "TooMany::"+String.format("Total: %d -> %d", total_len, total_len/2 + 5));
+    		total_len = total_len/2 + 5; 
     	}
-    	
+
     	if(metaBufferSize > (total_len + len)) {
     		System.arraycopy(buf, 0, metaBuffer, total_len, len);
     		total_len += len;
     		bComplete = checkIfComplete();
     	}
-    	
+
     	if(bComplete) {
-	    	int index = 0;
-	    	for(; index < total_len; index++) {
-	    		if((byte)0xff == metaBuffer[index]) {
-	    			break;
-	    		}
-	    	}
-	    	
-	    	if(index == total_len) {
-	    		//	TODO: 0xff NOT found
-	    		Log.d(TAG, "ACTION NOT FOUND");
-	    		total_len = 0;
-	    		bComplete = false;
-	    	} else if(0 < index) {
-	    		Log.d(TAG, "INDEX/LENG:"+index+"/"+total_len);
-		    	byte[] action = new byte[index];
-		    	System.arraycopy(metaBuffer, 0, action, 0, index);
-		    	int data_len = total_len - 4 - 1 - index;
-		    	byte[] data = new byte[data_len];
-		    	System.arraycopy(metaBuffer, index + 1, data, 0, data_len);
-		    	
-		    	Intent i = new Intent();
-		    	String szAction = new String(action);
-		    	i.setAction(szAction);
-		    	i.putExtra(ConnectionManagerActions.DATA_FIELD, data);
-		    	mContext.sendBroadcast(i);
-		    	Log.d(TAG, "parse()::sendBroadcast()::"+szAction+"("+szAction.length()+")");
+	    	OclockPackage opackage = OclockPackage.getObject(metaBuffer);
+	    	mContext.sendBroadcast(opackage.getIntent());
+	    	if(opackage.ack) {
+	    		Log.d(TAG, "ACK is Needed!");
+	    		result = opackage.client_name.getBytes();
+	    	} else {
+	    		Log.d(TAG, "NO ACK Required...");
+	    		result = null;
 	    	}
 	    	total_len = 0;
     	}
+    	
+    	return result;
     }
 
     final int metaBufferSize = 409600;

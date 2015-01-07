@@ -88,6 +88,8 @@ public class BTServiceReceiver extends BroadcastReceiver {
 			
         } else if(action.equals(ConnectionManagerActions.ALARM_MANAGER_CHECK)) {
         	doInit(context, true);
+        } else if(action.equals(BluetoothDevice.ACTION_PAIRING_REQUEST)) {
+        	this.doBondConfirm();
         } else {
 			Log.e(TAG, "UNKNOWN Broadcast ACTION::"+action);
 		}
@@ -128,7 +130,35 @@ public class BTServiceReceiver extends BroadcastReceiver {
         }
     }
     
-    
+    static BluetoothDevice sDev = null;
+    void doBondConfirm(BluetoothDevice dev) {
+		sDev = dev;
+		Log.d(TAG, "Set SDEV");
+		return;
+    }
+    void doBondConfirm() {
+    	if(null == sDev || !bIsServer) {	//	if device is NOT available DO NOTHING!
+    		Log.d(TAG, "doBondConfirm()::sDev is NULL");
+    		return;
+    	}
+
+    	if(!bIsServer) {
+    		Log.d(TAG, "doBondConfirm()::this is NOT Server");		//	if this is not the SERVER DO NOTHING!
+    		return;
+    	}
+
+    	try {
+        	//sDev.setPairingConfirmation(true));
+			sDev.getClass().getMethod("setPairingConfirmation", boolean.class).invoke(sDev, true);
+			//sDev.getClass().getMethod("cancelPairingUserInput", (Class<?>[])null).invoke(sDev, (Object[])null);
+			Log.d(TAG, "doBondStateChange()::BOND_BONDING::setPairingConfirmation - *cancelPairingUserInput");
+		} catch(NullPointerException n) {
+			Log.d(TAG, "doBondStateChange()::BOND_BONDING::Null Pointer Exception");
+		} catch(Exception e) {
+			Log.d(TAG, e.getLocalizedMessage());
+		}
+    }
+
     void doBondStateChange(BluetoothDevice dev, int state, int preState) {
 		Log.d(TAG, dev.getAddress());
 		Log.d(TAG, String.format("state change: %d -> %d", preState, state));
@@ -137,6 +167,7 @@ public class BTServiceReceiver extends BroadcastReceiver {
 				checkBondDeviceSetDiscoverable();
 				break;
 			case BluetoothDevice.BOND_BONDING:
+				doBondConfirm(dev);
 				break;
 			case BluetoothDevice.BOND_BONDED:
 				//	TODO: send CHECK and wait for ACK or Unboned for unknown device
@@ -153,30 +184,9 @@ public class BTServiceReceiver extends BroadcastReceiver {
     
     void doSendData(Intent intent) throws Exception{
 		//	TODO: Send Data
-		String NAME = intent.getStringExtra(ConnectionManagerActions.CLIENT_FIELD);
-		if(null == NAME) {
-			NAME = ConnectionManagerActions.CLIENT_UNKNOWN_NAME;
-		}
-		byte[] name = NAME.getBytes();
-		byte[] data = intent.getByteArrayExtra(ConnectionManagerActions.DATA_FIELD);
-		if(null == data) {
-			data = new byte[0];
-		}
-		byte[] data2send = new byte[1 + name.length + data.length + 4];
-		int offset = 0;
-		System.arraycopy(name, 0, data2send, offset, name.length);
-		offset += name.length;
-		data2send[offset] = (byte) 0xff;
-		offset ++;
-		System.arraycopy(data, 0, data2send, offset, data.length);
-		offset += data.length;
-		data2send[offset] = (byte)0xaa;
-		data2send[offset + 1] = (byte)0xbb;
-		data2send[offset + 2] = (byte)0xcc;
-		data2send[offset + 3] = (byte)0xdd;
-		
+    	OclockPackage opackage = new OclockPackage(intent);
 		if(null != mBTCommunicator) {
-			mBTCommunicator.write(data2send);								//		-Send data
+			mBTCommunicator.write(OclockPackage.getByteArray(opackage));								//		-Send data
 		}
     }
     
@@ -298,17 +308,15 @@ public class BTServiceReceiver extends BroadcastReceiver {
 		if(bIsServer) {
 			return;
 		}
-		byte[] confirm = ConnectionManagerActions.PAIRING_CONFIRM.getBytes();
-		byte[] data = new byte[1 + confirm.length + 4];
-		int offset = 0;
-		System.arraycopy(confirm, 0, data, 0, confirm.length);
-		offset += confirm.length;
-		data[offset] = (byte)0xff;
-		data[offset + 1] = (byte)0xaa;
-		data[offset + 2] = (byte)0xbb;
-		data[offset + 3] = (byte)0xcc;
-		data[offset + 4] = (byte)0xdd;
-		mBTCommunicator.write(data);
+		OclockPackage opackage = new OclockPackage();
+		opackage.client_name = ConnectionManagerActions.PAIRING_CONFIRM; 
+		byte[] p = OclockPackage.getByteArray(opackage);
+		int index = 0;
+		for(byte b:p) {
+			Log.d(TAG, String.format("[%d] 0x%02x", index, b));
+			index++;
+		}
+		mBTCommunicator.write(p);
 	}
 
 	void startTimer() {

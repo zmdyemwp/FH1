@@ -37,8 +37,10 @@ public class ConnectionManagerActions {
 
     //	Action to send data
     public static final String ACTION_SEND_DATA = "com.fih.oclock.btservice.action.send";				//	add into intent filter
+    public static final String ACK_FIELD = "ack";
     public static final String DATA_FIELD = "data";
     public static final String CLIENT_FIELD = "client_name";
+	public static final String ICON_FIELD = "icon";
     public static final String CLIENT_UNKNOWN_NAME = "com.fih.oclock.UNKNOWN.DEVICE";
 
     

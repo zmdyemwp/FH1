@@ -462,9 +462,11 @@ public class Communicator {
             while (true) {
                 try {
                     // Read from the InputStream
-                	//try {Thread.sleep(3000);} catch(Throwable e){}
                     bytes = mmInStream.read(buffer);
-                    mMsgHandler.parse(buffer,bytes);
+                    byte[] result = mMsgHandler.parse(buffer,bytes);
+                    if(null != result) {
+                    	sendACK(result);
+                    }
                     Log.d(TAG, "......");
                 } catch (IOException e) {
                     Log.e(TAG, "DISCONNECTED", e);
@@ -486,17 +488,22 @@ public class Communicator {
         public void write(byte[] buffer) {
             try {
                 mmOutStream.write(buffer);
-
-                // Share the sent message back to the UI Activity
-                /*
-                mHandler.obtainMessage(BluetoothChat.MESSAGE_WRITE, -1, -1, buffer)
-                        .sendToTarget();
-                */
             } catch (IOException e) {
                 Log.e(TAG, "Exception during write", e);
             }
         }
 
+        /**
+         * Send ACK back to remote device
+         * 		the parameter 'action' will be used as the action of broadcast intent at the remote side
+         * */
+        void sendACK(byte[] action) {
+        	OclockPackage opackage = new OclockPackage();
+        	opackage.client_name = new String(action);
+        	write(OclockPackage.getByteArray(opackage));
+        	Log.d(TAG, "Communicator::sendACK()");
+        }
+        
         public void cancel() {
             try {
                 mmSocket.close();

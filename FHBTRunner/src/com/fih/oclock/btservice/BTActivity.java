@@ -11,7 +11,6 @@ import android.view.Menu;
 import android.view.View;
 import android.widget.TextView;
 
-
 public class BTActivity extends Activity {
 
 	BTClientReceiver receiver;
@@ -112,7 +111,19 @@ public class BTActivity extends Activity {
 		@Override
 		public void onClick(View v) {
 			Intent i = new Intent();
-			switch(v.getId()) {
+			int id = v.getId();
+			if(R.id.connectBtn == id) {
+				Log.d(TAG, "R.id.connectBtn");
+				i.setClass(BTActivity.this, DeviceListActivity.class);
+				startActivityForResult(i, DEVICE_LIST);
+			} else if(R.id.disconnectBtn == id || R.id.waitingBtn == id) {
+				Log.d(TAG, "R.id.disconnectBtn");
+				i.setAction(ConnectionManagerActions.CONTROL_ACTION);
+				i.putExtra(ConnectionManagerActions.COMMAND_FIELD, ConnectionManagerActions.DISCONNECT_FROM);
+				sendBroadcast(i);
+			} else {
+			}
+			/*switch(v.getId()) {
 			case R.id.connectBtn:
 				Log.d(TAG, "R.id.connectBtn");
 				i.setClass(BTActivity.this, DeviceListActivity.class);
@@ -127,7 +138,7 @@ public class BTActivity extends Activity {
 				break;
 			default:
 				break;
-			}
+			}*/
 		}
 	};
 	

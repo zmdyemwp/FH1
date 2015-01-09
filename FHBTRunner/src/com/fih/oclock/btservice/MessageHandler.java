@@ -59,7 +59,7 @@ public class MessageHandler {
     	}
 
     	if(bComplete) {
-	    	OclockPackage opackage = OclockPackage.getObject(metaBuffer);
+    		OclockPackage opackage = OclockPackage.getObject(metaBuffer);
 	    	mContext.sendBroadcast(opackage.getIntent());
 	    	if(opackage.ack) {
 	    		Log.d(TAG, "ACK is Needed!");
@@ -74,7 +74,7 @@ public class MessageHandler {
     	return result;
     }
 
-    final int metaBufferSize = 409600;
+    final int metaBufferSize = 8388608;				//	8M
     byte[] metaBuffer = new byte[metaBufferSize];
     int total_len = 0;
     boolean bComplete = false;

@@ -40,7 +40,7 @@ public class OclockPackage implements Serializable {
 
 	private void writeObject(java.io.ObjectOutputStream out) throws IOException {
 		// write 'this' to 'out'...
-		
+		Log.d(TAG, "writeObject");
 		//		ACK
 		if(ack) {
 			out.write(1);
@@ -100,8 +100,10 @@ public class OclockPackage implements Serializable {
 
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
 	   	// populate the fields of 'this' from the data in 'in'...
+		Log.d(TAG, "readObject");
 		//		ACK
 		byte b = in.readByte();
+		Log.d(TAG, "readObject::readByte::"+b);
 		if(0 == b) {
 			ack = false;
 		} else {
@@ -111,33 +113,52 @@ public class OclockPackage implements Serializable {
 		int length = 0;
 		//		Client Name
 		length = in.readInt();
+		Log.d(TAG, "readObject::readInt::"+length);
 		if(0 < length) {
 			byte[] name = new byte[length];
 			in.read(name, 0, length);
 			client_name = new String(name);
+			Log.d(TAG, "readObject::read::client_name::"+client_name);
 		} else {
 			client_name = "";
 		}
 
 		//		Data
 		length = in.readInt();
+		Log.d(TAG, "readObject::readInt::"+length);
 		if(0 < length) {
 			data = new byte[length];
-			in.read(data, 0, length);
+			InputSafeRead(in, data);
 		} else {
 			data = new byte[0];
 		}
 
 		//		Icon
 		length = in.readInt();
+		Log.d(TAG, "readObject::readInt::"+length);
 		if(0 < length) {
 			icon = new byte[length];
-			in.read(icon, 0, length);
+			InputSafeRead(in, icon);
 		} else {
 			icon = new byte[0];
 		}
 	}
 
+	void InputSafeRead(java.io.ObjectInputStream in, byte[] buffer) {
+		int length = buffer.length;
+		Log.d(TAG, "InputSafeRead()::"+length);
+		try {
+			for(int i = 0; i < length; i++) {
+				buffer[i] = in.readByte();
+			}
+			Log.d(TAG, "NO IOEXCeption");
+		} catch(IOException ioe) {
+			String errmsg = ioe.getLocalizedMessage();
+			if(null == errmsg) errmsg = "";
+			Log.d(TAG, "IOEXCeption"+errmsg);
+		}
+	}
+	
 	
 	public static byte[] getByteArray(OclockPackage obj) {
 		byte[] result = null;
@@ -150,6 +171,7 @@ public class OclockPackage implements Serializable {
 		} catch(IOException ioe) {
 			Log.d(TAG, ioe.getLocalizedMessage());
 		} catch(Exception e) {}
+
 		return result;
 	}
 	

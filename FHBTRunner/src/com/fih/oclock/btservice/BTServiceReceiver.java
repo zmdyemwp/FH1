@@ -311,11 +311,6 @@ public class BTServiceReceiver extends BroadcastReceiver {
 		OclockPackage opackage = new OclockPackage();
 		opackage.client_name = ConnectionManagerActions.PAIRING_CONFIRM; 
 		byte[] p = OclockPackage.getByteArray(opackage);
-		int index = 0;
-		for(byte b:p) {
-			Log.d(TAG, String.format("[%d] 0x%02x", index, b));
-			index++;
-		}
 		mBTCommunicator.write(p);
 	}
 
